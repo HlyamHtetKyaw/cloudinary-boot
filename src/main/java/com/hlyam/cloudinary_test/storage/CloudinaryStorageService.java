@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -25,47 +26,48 @@ public class CloudinaryStorageService implements StorageService {
     }
 
     @Override
-    public String store(MultipartFile file) {
+    public String store(MultipartFile file,String folderName) {
         try {
-            Map<?, ?> result = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
-            return (String) result.get("secure_url"); // Or use public_id if you prefer
+        	HashMap<Object, Object> options = new HashMap<>();
+        	 options.put("folder", folderName);
+        	 @SuppressWarnings("unchecked")
+        	 Map<String, Object> uploadedFile = cloudinary.uploader().upload(file.getBytes(), options);
+        	 String publicId = (String) uploadedFile.get("public_id");
+        	 return cloudinary.url().secure(true).generate(publicId);
         } catch (IOException e) {
             throw new RuntimeException("Failed to upload to Cloudinary", e);
         }
     }
 
     @Override
-    public Resource loadAsResource(String filenameOrUrl) {
+    public Object delete(String publicId) {
         try {
-            return new UrlResource(URI.create(filenameOrUrl).toURL());
-        } catch (MalformedURLException e) {
-            throw new RuntimeException("Invalid Cloudinary URL", e);
-        }
-    }
-
-    // These may be optional or unsupported for remote storage
-    @Override public void delete(String publicId) {
-        try {
-            cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+        	Map<String, Object> deleteOptions = new HashMap<>();
+        	deleteOptions.put("invalidate", true);
+        	@SuppressWarnings("unchecked")
+        	Map<String, Object> result = (Map<String, Object>) cloudinary.uploader()
+        	    .destroy(publicId, deleteOptions);
+            return result.get("result");
         } catch (IOException e) {
             throw new RuntimeException("Failed to delete from Cloudinary", e);
         }
     }
+    
+    @Override
+    public String update(MultipartFile newFile, String publicId, String folderName) {
+        try {
+            Map<String, Object> options = new HashMap<>();
+            options.put("public_id", folderName + "/" + publicId);
+            options.put("overwrite", true);
 
-    @Override public List<Path> loadAll() {
-        throw new UnsupportedOperationException("loadAll not supported for Cloudinary");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> uploadedFile = (Map<String, Object>)
+                    cloudinary.uploader().upload(newFile.getBytes(), options);
+            return (String) uploadedFile.get("secure_url");
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to update image on Cloudinary", e);
+        }
     }
 
-    @Override public Path load(String filename) {
-        throw new UnsupportedOperationException("load not supported for Cloudinary");
-    }
-
-    @Override public void deleteAll() {
-        throw new UnsupportedOperationException("deleteAll not supported for Cloudinary");
-    }
-
-    @Override public void init() {
-        // No init required
-    }
 }
 

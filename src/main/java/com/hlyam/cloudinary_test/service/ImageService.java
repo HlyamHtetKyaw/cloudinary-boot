@@ -14,8 +14,14 @@ public class ImageService {
 	private StorageService storageService;
 
     public String uploadImage(MultipartFile file) {
-
-        String filename = storageService.store(file);
-        return filename;
+        return storageService.store(file,"test_folder");
+    }
+    
+    public Object deleteImage(String publicId) {
+    	return storageService.delete(publicId);
+    }
+    
+    public String updateImage(MultipartFile newFile, String publicId) {
+    	return storageService.update(newFile, publicId, "test_folder");
     }
 }

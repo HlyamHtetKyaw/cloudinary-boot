@@ -9,17 +9,17 @@ import org.springframework.context.annotation.Configuration;
 
 import com.cloudinary.Cloudinary;
 
+import io.github.cdimascio.dotenv.Dotenv;
+
 @Configuration
 public class CloudinaryConfig {
+	private Dotenv dotenv = Dotenv.configure().ignoreIfMissing().systemProperties().load();
 
-    @Value("${cloudinary.cloud-name}")
-    private String cloudName;
+    private String cloudName = dotenv.get("CLOUDINARY_CLOUD_NAME");
 
-    @Value("${cloudinary.api-key}")
-    private String apiKey;
+    private String apiKey = dotenv.get("CLOUDINARY_API_KEY");
 
-    @Value("${cloudinary.api-secret}")
-    private String apiSecret;
+    private String apiSecret = dotenv.get("CLOUDINARY_API_SECRET");
 
     @Bean
     public Cloudinary cloudinary() {
